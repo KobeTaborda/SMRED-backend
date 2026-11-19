@@ -37,6 +37,12 @@ const envSchema = z.object({
   DB_APP_USER: z.string().default('smred_app'),
   DB_APP_PASSWORD: z.string({ error: 'Falta DB_APP_PASSWORD' }).min(1, 'Falta DB_APP_PASSWORD'),
   DB_MIGRATE_ON_START: booleanString,
+  // true solo en local (certificado autofirmado de Docker). En la nube (Azure SQL) va en false:
+  // así el driver valida el certificado del servidor y la conexión no se puede suplantar.
+  DB_TRUST_SERVER_CERT: booleanString,
+  // Cuántos proxies hay delante del servidor en producción (Vercel + Render = 2).
+  // Sirve para que req.ip sea la IP real del navegador, que usan el bloqueo y el límite de intentos.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(1).max(5).default(1),
 
   SESSION_SECRET: z
     .string({ error: 'Falta SESSION_SECRET' })
@@ -97,7 +103,9 @@ export function loadConfig() {
       user: env.DB_APP_USER,
       password: env.DB_APP_PASSWORD,
       migrateOnStart: env.DB_MIGRATE_ON_START,
+      trustServerCertificate: env.DB_TRUST_SERVER_CERT,
     },
+    trustProxyHops: env.TRUST_PROXY_HOPS,
     session: {
       secret: env.SESSION_SECRET,
       isExampleSecret: env.SESSION_SECRET.startsWith('cambia-esto'),

@@ -22,7 +22,8 @@ export function createApp({ config, logger, userRepository, userService, hostSer
   app.disable('x-powered-by')
   // En producción, detrás del proxy HTTPS de la nube. En desarrollo, detrás del proxy de Vite (en este mismo equipo):
   // así req.ip es la IP real del navegador, que usa el bloqueo por intentos fallidos.
-  app.set('trust proxy', config.isProduction ? 1 : 'loopback')
+  // En la nube hay dos saltos (Vercel y Render): se configura con TRUST_PROXY_HOPS.
+  app.set('trust proxy', config.isProduction ? (config.trustProxyHops ?? 1) : 'loopback')
 
   app.use(
     helmet({
@@ -56,6 +57,12 @@ export function createApp({ config, logger, userRepository, userService, hostSer
       cookie: { httpOnly: true, sameSite: 'lax', secure: 'auto', maxAge: config.session.ttlMs },
     }),
   )
+
+  // Las respuestas de la API tienen datos de la sesión: ningún navegador ni CDN (Vercel) debe guardarlas
+  app.use('/api', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store')
+    next()
+  })
 
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

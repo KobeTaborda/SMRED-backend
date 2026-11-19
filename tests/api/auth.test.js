@@ -7,6 +7,13 @@ describe('API /api/auth', () => {
   let ctx
   beforeEach(async () => (ctx = await createTestApp()))
 
+  it('pide que ninguna respuesta de la API se guarde en caché (navegador ni CDN)', async () => {
+    const health = await request(ctx.app).get('/api/health')
+    assert.equal(health.headers['cache-control'], 'no-store')
+    const me = await request(ctx.app).get('/api/auth/me')
+    assert.equal(me.headers['cache-control'], 'no-store')
+  })
+
   it('rechaza peticiones que modifican datos sin token CSRF', async () => {
     const res = await request(ctx.app).post('/api/auth/login').send(ADMIN)
     assert.equal(res.status, 403)
