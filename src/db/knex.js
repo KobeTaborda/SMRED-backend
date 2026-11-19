@@ -16,8 +16,10 @@ export function knexConfig(dbConfig) {
       database: dbConfig.database,
       encrypt: true,
       options: {
-        // Certificado autofirmado en desarrollo local. En la nube (Azure SQL) debe ser false.
-        trustServerCertificate: true,
+        // Certificado autofirmado en desarrollo local. En la nube (Azure SQL) debe ser false (DB_TRUST_SERVER_CERT).
+        trustServerCertificate: dbConfig.trustServerCertificate ?? true,
+        // Azure SQL gratuito se pausa cuando no se usa y tarda hasta un minuto en despertar
+        connectTimeout: 30_000,
         // Para SQL Server Express con instancia con nombre (ej. SQLEXPRESS)
         instanceName: dbConfig.instanceName,
         // Todas las fechas se guardan y leen en UTC

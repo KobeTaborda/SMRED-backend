@@ -20,6 +20,23 @@ import { seedInitialAdmin } from './users/admin-seeder.js'
 import { createUserRepository } from './users/user.repository.js'
 import { createUserService } from './users/user.service.js'
 
+/**
+ * Espera a la base de datos con varios intentos. En la nube, Azure SQL gratuito se pausa cuando
+ * nadie lo usa y el primer intento falla mientras despierta (hasta un minuto).
+ */
+async function waitForDatabase(db, logger, { attempts = 6, delayMs = 10_000 } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.raw('SELECT 1')
+      return
+    } catch (err) {
+      if (attempt >= attempts) throw err
+      logger.warn({ attempt, reason: err.message }, `La base de datos aún no responde; se reintenta en ${delayMs / 1000} s`)
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
+  }
+}
+
 async function main() {
   const config = loadConfig()
   const logger = createLogger(config)
@@ -29,7 +46,7 @@ async function main() {
   }
 
   try {
-    await db.raw('SELECT 1')
+    await waitForDatabase(db, logger)
   } catch (err) {
     logger.fatal(
       { reason: err.message },

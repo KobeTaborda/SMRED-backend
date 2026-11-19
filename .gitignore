@@ -1,0 +1,17 @@
+# Secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+certs/
+
+# Dependencias
+node_modules/
+
+# IDEs y sistema
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
